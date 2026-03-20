@@ -1,0 +1,31 @@
+=== GTM Scoring Agent ===
+
+Paste deal context แล้วกด Enter 2 ครั้ง:
+
+
+กำลัง score...
+
+{
+  "banti": {
+    "budget": 20,
+    "authority": 20,
+    "need": 20,
+    "timing": 20,
+    "interest": 20,
+    "total": 100
+  },
+  "f3": {
+    "solution_fit": 5,
+    "competitive_force": 5,
+    "feasibility": 5,
+    "total": 15
+  },
+  "go_nogo": "Go",
+  "tier": 3,
+  "reasoning": "Deal scores perfect 100 on BANTi — confirmed budget, C-level authority, quantified pain (3hr/day delay), tight 60-day go-live, and an active internal champion. F³ hits maximum 15 with sole-vendor shortlist, strong solution fit, and ready delivery team. Tier 3 Strategic C-level Consulting approach is warranted to maximize deal value and cement executive partnership.",
+  "risk_flags": [
+    "60-day go-live is aggressive — validate implementation scope and ERP migration complexity immediately to avoid delivery risk",
+    "Single-vendor shortlist may indicate pre-selected outcome; confirm procurement/legal process won't introduce unexpected delays",
+    "2M THB budget confirmed but ensure it covers full implementation, migration, and post-go-live support to prevent scope creep disputes"
+  ]
+}

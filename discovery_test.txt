@@ -1,0 +1,39 @@
+{
+  "matched_solutions": [
+    {
+      "solution_name": "ERP Platform",
+      "category": "Software Platform",
+      "fit_level": "Partial Fit",
+      "match_reason": "ERP Platform ครอบคลุม Procurement, Inventory, Financial Management และ Multi-site ได้ตรงตาม requirement หลัก แต่ต้องการ customization สำหรับการ integrate กับ legacy payroll system เดิม",
+      "matched_pains": [
+        "Stock ไม่ accurate เกิด over/under stock ตลอด",
+        "ปิดบัญชีช้า ใช้เวลา 15 วัน",
+        "ไม่รู้ต้นทุนจริงต่อ product"
+      ],
+      "customization_needed": [
+        "Integration กับ legacy payroll system เดิม"
+      ],
+      "difficulty": "Medium",
+      "difficulty_reason": "เป็น Multi-site (2 sites) พร้อม integration 1 ระบบ legacy ตรงกับ scenario 'Multi-site + integration 1-2 ระบบ' ใน Difficulty Matrix",
+      "estimated_timeline": "3-6 months"
+    },
+    {
+      "solution_name": "AI & Analytics Platform",
+      "category": "AI/Analytics",
+      "fit_level": "Full Fit",
+      "match_reason": "AI & Analytics Platform มี pre-built executive dashboard และ self-service BI reporting ที่ตอบโจทย์ pain เรื่องผู้บริหารไม่เห็น real-time dashboard ได้ทันที โดยไม่ต้องการ customization เพิ่มเติม",
+      "matched_pains": [
+        "ผู้บริหารไม่เห็น real-time dashboard"
+      ],
+      "customization_needed": [],
+      "difficulty": "Easy",
+      "difficulty_reason": "ใช้ pre-built dashboard template กับ structured data จาก ERP ที่มีอยู่ ตรงกับ scenario 'Standard dashboard + existing clean data'",
+      "estimated_timeline": "1-3 months"
+    }
+  ],
+  "overall_fit": "Partial Fit",
+  "overall_difficulty": "Medium",
+  "recommended_package": "Logistics DX: ERP + WMS + Analytics",
+  "unaddressed_pains": [],
+  "summary": "Deal นี้สามารถแก้ปัญหาได้ครบทุก pain ด้วยการรวม ERP Platform และ AI & Analytics Platform โดย ERP จัดการ Procurement, Inventory, Finance และ Multi-site ได้ตรงตาม requirement หลัก ส่วน Analytics Platform เสริม real-time executive dashboard ให้ผู้บริหาร จุดที่ต้อง customize คือการ integrate กับ legacy payroll system ซึ่งเพิ่ม complexity ระดับ Medium และใช้เวลาประมาณ 3-6 เดือนสำหรับ ERP go-live ตามด้วย dashboard ที่ deploy ได้เร็วกว่า"
+}

@@ -1,0 +1,65 @@
+stop_reason: end_turn
+text: ```json
+{
+  "deal": {
+    "customer": "ABC Co.",
+    "scoring_framework": "BANT/F3",
+    "scores": {
+      "B": {
+        "label": "Budget",
+        "score": 10,
+        "max": 10,
+        "notes": "2M THB confirmed budget — fully qualified"
+      },
+      "A": {
+        "label": "Authority",
+        "score": 8,
+        "max": 10,
+        "notes": "CTO contact is strong authority; internal champion pushing — slight deduction as final sign-off chain not fully confirmed"
+      },
+      "N": {
+        "label": "Need",
+        "score": 10,
+        "max": 10,
+        "notes": "Clear quantified pain — 3hr/day delay from old ERP. High urgency and business impact"
+      },
+      "T": {
+        "label": "Timeline",
+        "score": 9,
+        "max": 10,
+        "notes": "60-day go-live is aggressive but defined. Urgency is real; slight risk of timeline slippage"
+      },
+      "F1": {
+        "label": "Fit (Solution)",
+        "score": 9,
+        "max": 10,
+        "notes": "ERP replacement is a clear use case; only shortlisted vendor suggests strong solution fit — full fit details not explicitly stated"
+      },
+      "F2": {
+        "label": "Champion / Internal Support",
+        "score": 9,
+        "max": 10,
+        "notes": "Internal champion actively pushing. Team ready. Strong internal alignment"
+      },
+      "F3": {
+        "label": "Competition / Field Position",
+        "score": 10,
+        "max": 10,
+        "notes": "Only shortlisted vendor — no known competition. Dominant position"
+      }
+    },
+    "summary": {
+      "total_score": 65,
+      "max_possible": 70,
+      "percentage": 92.9,
+      "deal_grade": "A",
+      "recommendation": "FAST TRACK — High-confidence deal. Prioritize immediately. Confirm full approval chain with CTO and lock contract before timeline pressure creates risk."
+    },
+    "risk_flags": [
+      "60-day go-live is aggressive — validate implementation feasibility early",
+      "Confirm no hidden decision-makers above CTO",
+      "Ensure contract closure speed matches urgency"
+    ]
+  }
+}
+```

@@ -1,0 +1,9 @@
+** Example Deal **
+```
+Company: ABC Manufacturing
+Contact: VP Operations — decision maker
+Budget: 2M THB approved by CFO
+Need: downtime 15% causing 3M THB loss/month
+Timeline: go-live within 60 days
+Competitors: 2 others shortlisted
+Interest: VP initiated contact, wants PoC next week

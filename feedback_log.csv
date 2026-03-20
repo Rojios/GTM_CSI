@@ -1,0 +1,99 @@
+timestamp,deal_context,ai_gonogo,ai_tier,ai_banti_total,ai_f3_total,ai_reasoning,correct_gonogo,correct_tier,feedback_note
+2026-03-17 15:56:42,"Company: HOYA
+Contact & Role: President
+Budget: Approved 5MB
+Need & Pain: VCIS System ต่อเชื่อมกับ IIoT แล้วแสดงผลแบบ Realtime
+Timeline: 6 months
+Competitors: No
+Interest Level: Phase 1 already done",Go,3,88,13,Deal มีความแข็งแกร่งสูงมาก — คุยกับ President โดยตรง งบ 5MB approved แล้ว และมี Phase 1 เสร็จแล้วซึ่งเป็น internal champion signal ที่ชัดเจน Timeline 6 months ทำให้ Timing ได้ 8 คะแนน (เกิน 90 วัน) แต่ไม่ blocking deal F³ รวม 13 คะแนน บ่งชี้ว่าควร engage ระดับ Strategic C-level Consulting เพื่อ position solution ให้ align กับ business vision ของ President และ roadmap ต่อจาก Phase 1.,Go,3,เป็น Project ที่บริษัทเป็นคนทำ Phase I โอกาสได้งานสูงมากเกือบ 100%
+2026-03-17 15:56:46,"Company: HOYA
+Contact & Role: President
+Budget: Approved 5MB
+Need & Pain: VCIS System ต่อเชื่อมกับ IIoT แล้วแสดงผลแบบ Realtime
+Timeline: 6 months
+Competitors: No
+Interest Level: Phase 1 already done",Go,3,88,13,Deal มีความแข็งแกร่งสูงมาก — คุยกับ President โดยตรง งบ 5MB approved แล้ว และมี Phase 1 เสร็จแล้วซึ่งเป็น internal champion signal ที่ชัดเจน Timeline 6 months ทำให้ Timing ได้ 8 คะแนน (เกิน 90 วัน) แต่ไม่ blocking deal F³ รวม 13 คะแนน บ่งชี้ว่าควร engage ระดับ Strategic C-level Consulting เพื่อ position solution ให้ align กับ business vision ของ President และ roadmap ต่อจาก Phase 1.,Go,3,เป็น Project ที่บริษัทเป็นคนทำ Phase I โอกาสได้งานสูงมากเกือบ 100%
+2026-03-17 16:30:01,"Company: Kawasaki
+Contact & Role: CTO
+Budget: 10MB
+Need & Pain: Digital Consulatant
+Timeline: 3 months
+Competitors: no competitor
+Interest Level: very high",Go,3,78,12,"BANTi score 78 is well above the Go threshold, with strong authority (CTO), tight 3-month timeline, no competition, and very high interest. However, Need is underdeveloped — 'Digital Consultant' is too vague without a defined pain point or business impact metric, which elevates scope risk. F³ hits 12 (Tier 3), indicating a Strategic C-Level Consulting approach is required to co-define the problem statement and solution scope before any proposal.",Go,N/A,
+2026-03-17 16:42:17,"Company: ISUZU
+Contact & Role: Production Director
+Budget: 15MB
+Need & Pain: Production Planning
+Timeline: 6 months
+Competitors: 3 shortlist
+Interest Level: solid level",Go,2,64,9,Deal qualifies as Go with BANTi 64 — Production Director ที่ ISUZU มีงบ 15MB ชัดเจนและมีอำนาจตัดสินใจโดยตรง อย่างไรก็ตาม Need ยังระบุแค่ 'Production Planning' โดยไม่มี business impact เป็นตัวเลข และ Timeline 6 เดือนยังไม่เข้า 90-day threshold ทำให้คะแนนสองตัวนี้ไม่เต็ม F³ total อยู่ที่ 9 (Tier 2) เนื่องจากมีคู่แข่ง 3 รายใน shortlist กดคะแนน Competitive Force ลง แนะนำใช้ Story-driven Proposal เพื่อสร้าง differentiation.,Go,3,
+2026-03-17 16:44:21,"Company: ISUZU
+Contact & Role: Production Director
+Budget: 15MB
+Need & Pain: Production Planning
+Timeline: 6 months
+Competitors: 3 shortlist
+Interest Level: solid level",Go,2,64,9,Deal qualifies as Go with BANTi 64 — Production Director ที่ ISUZU มีงบ 15MB ชัดเจนและมีอำนาจตัดสินใจโดยตรง อย่างไรก็ตาม Need ยังระบุแค่ 'Production Planning' โดยไม่มี business impact เป็นตัวเลข และ Timeline 6 เดือนยังไม่เข้า 90-day threshold ทำให้คะแนนสองตัวนี้ไม่เต็ม F³ total อยู่ที่ 9 (Tier 2) เนื่องจากมีคู่แข่ง 3 รายใน shortlist กดคะแนน Competitive Force ลง แนะนำใช้ Story-driven Proposal เพื่อสร้าง differentiation.,Go,3,
+2026-03-17 16:47:46,"Company: AEON
+Contact & Role: CTO
+Budget: 2MB
+Need & Pain: Personal Loan Replacement
+Timeline: 6 months
+Competitors: 2 shortlists
+Interest Level: roadmap done",Go,2,66,10,BANTi รวม 66 คะแนน ผ่านเกณฑ์ Go แม้ว่างบ 2MB ยังไม่ได้ confirm ตัวเลขชัดเจน และ Timeline 6 เดือนยังเกิน 90 วัน แต่มีจุดแข็งสำคัญคือคุยกับ CTO โดยตรงและมี internal champion ที่มี roadmap พร้อมแล้ว F³ รวม 10 คะแนน (Tier 2) เนื่องจากอยู่ใน shortlist 2 ราย และ Need ยังอธิบาย business impact เป็นตัวเลขไม่ได้ชัดเจน แนะนำให้ใช้ Story-driven Proposal เพื่อสร้างความแตกต่างจากคู่แข่ง,Go,2,
+2026-03-17 17:15:07,"Company: Toyota Motor Thailand
+Contact & Role: AGM
+Budget: 13 MB approved
+Need & Pain: Production Planning replace human operation
+Timeline: 12 months
+Competitors: No competitor
+Interest Level: Solid",Go,3,78,12,"Deal qualifies strongly with BANTi 78/100 — budget confirmed at 13MB, clear pain point (Production Planning automation replacing human ops), and solid internal champion with no competitive threat. AGM-level contact is a strong influencer but not final decision-maker, so C-Level engagement is critical to close. Timeline at 12 months raises feasibility risk that must be scoped carefully, warranting Strategic C-Level Consulting approach given F³ score of 12.",Go,3,
+2026-03-17 17:20:57,"Company: HOYA
+Contact & Role: President
+Budget: 3 MB
+Need & Pain: Connect Machine to IoT
+Timeline: 3 months
+Competitors: 1 shortlist
+Interest Level: solid level",Go,3,78,13,"Deal qualifies as Go with BANTi score of 78 — President-level authority and 3-month timeline create strong executive urgency. F³ score of 13 pushes this to Tier 3 Strategic C-level Consulting, as we are the sole shortlisted vendor with solid interest from the top. Budget at 3MB is stated but not fully confirmed, and IoT machine connectivity need requires further scoping to validate solution fit depth.",Go,3,
+2026-03-17 17:29:18,"Company: Kawasaki
+Contact & Role: CTO
+Budget: confirmed 3 mb
+Need & Pain: Warehouse management system
+Timeline: 60 days
+Competitors: no competitor
+Interest Level: Solid",Go,3,88,13,"Deal scores strongly on BANTi (88/100) with confirmed 3MB budget, direct CTO engagement, aggressive 60-day timeline, and no competition — all high-confidence signals. F³ lands at 13/15, with solution fit and feasibility slightly docked due to insufficient detail on WMS requirement scope and delivery readiness within 60 days. This warrants a Strategic C-Level Consulting approach to deeply align WMS solution architecture with Kawasaki's operational needs and de-risk the tight timeline.",Go,3,
+2026-03-17 17:38:01,"Company: Toyota Motor Thailand
+Contact & Role: EVP
+Budget: 3mb
+Need & Pain: Spare part stock management
+Timeline: 3 months
+Competitors: no
+Interest Level: solid",Go,3,78,13,"Deal qualifies strongly with BANTi 78 — EVP-level authority, firm 3-month go-live, and solid internal champion give high confidence. Budget of 3MB is stated but not yet confirmed with PO/budget code, and the spare part stock management pain lacks quantified business impact which limits Need score. F³ reaches 13 (Tier 3) driven by no competition and reasonable feasibility, warranting a Strategic C-level Consulting approach to elevate the conversation around supply chain ROI and inventory optimization value.",Go,2,
+2026-03-17 17:47:00,"Company: Toyota Motor Thailand
+Contact & Role: EVP
+Budget: 3mb
+Need & Pain: Spare part stock management
+Timeline: 3 months
+Competitors: no
+Interest Level: solid",Go,3,78,13,"Deal qualifies strongly with BANTi 78 — EVP-level authority, firm 3-month go-live, and solid internal champion with no competing vendors. Budget of 3MB is stated but not yet confirmed with PO/budget code, and spare part stock management pain lacks quantified business impact, leaving some scoring headroom. F³ scores 13/15 indicating high strategic value, triggering Tier 3 Strategic C-level Consulting approach.",Go,2,
+2026-03-19 15:33:24,"Company: test
+Contact & Role: manager
+Budget: 2mb
+Need & Pain: erp
+Timeline: 2months
+Competitors: no
+Interest Level: solid",No-Go,null,56,11,BANTi รวมได้ 56 คะแนน ต่ำกว่าเกณฑ์ Go ที่ 60 คะแนน เนื่องจากงบประมาณยังไม่ได้รับการยืนยันเป็นตัวเลขชัดเจน (2mb อาจหมายถึง 2 million baht แต่ยังไม่มี PO/budget code) และ Contact เป็นระดับ Manager ซึ่งเป็น influencer ไม่ใช่ผู้มีอำนาจตัดสินใจสูงสุด นอกจากนี้ Need ระบุเพียง 'ERP' โดยไม่มี pain point หรือ business impact เป็นตัวเลขที่ชัดเจน ทำให้คะแนนรวมไม่ผ่านเกณฑ์,Go,1,
+2026-03-19 15:33:30,"Company: test
+Contact & Role: manager
+Budget: 2mb
+Need & Pain: erp
+Timeline: 2months
+Competitors: no
+Interest Level: solid",No-Go,null,56,11,BANTi รวมได้ 56 คะแนน ต่ำกว่าเกณฑ์ Go ที่ 60 คะแนน เนื่องจากงบประมาณยังไม่ได้รับการยืนยันเป็นตัวเลขชัดเจน (2mb อาจหมายถึง 2 million baht แต่ยังไม่มี PO/budget code) และ Contact เป็นระดับ Manager ซึ่งเป็น influencer ไม่ใช่ผู้มีอำนาจตัดสินใจสูงสุด นอกจากนี้ Need ระบุเพียง 'ERP' โดยไม่มี pain point หรือ business impact เป็นตัวเลขที่ชัดเจน ทำให้คะแนนรวมไม่ผ่านเกณฑ์,Go,1,
+2026-03-19 15:58:26,"Company: Thai Honda
+Contact & Role: CTO
+Budget: 70MB
+Need & Pain: Replace current lagacy Production and implement IoT with machine
+Timeline: 24 months
+Competitors: 3 Competitors, Fujitsu, Abeam, NTT Data
+Interest Level: TOR already launch",Go,2,88,10,"Deal qualifies strongly on BANTi (88/100) — CTO engagement, confirmed 70MB budget, clear pain around legacy production + IoT, and TOR already launched signals high urgency and internal championship. F³ scores moderate (10/15) due to 3 strong Japanese SI competitors (Fujitsu, ABeam, NTT Data) in the race and a 24-month timeline that requires careful resource planning, warranting a Story-driven proposal that differentiates on value and local execution capability.",Go,3,
