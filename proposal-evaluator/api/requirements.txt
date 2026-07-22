@@ -1,0 +1,7 @@
+azure-functions
+azure-storage-blob
+azure-ai-formrecognizer          # Document Intelligence (text extract + OCR) — F06/F07
+openai>=1.40.0                    # Azure OpenAI client — F09
+pyodbc                            # Azure SQL — F04/F10/F11
+python-pptx                       # PPTX text extract fallback — F06
+pydantic>=2.0                     # schema validation for LLM JSON — F10

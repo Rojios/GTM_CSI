@@ -6,7 +6,9 @@ import sys
 sys.stdout.reconfigure(encoding="utf-8")
 sys.stderr.reconfigure(encoding="utf-8")
 
-os.environ["ANTHROPIC_API_KEY"] = "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"
+# API key อ่านจาก env ANTHROPIC_API_KEY เท่านั้น (ห้าม hardcode — คีย์เก่ารั่วขึ้น git ต้อง revoke)
+if not os.environ.get("ANTHROPIC_API_KEY"):
+    raise SystemExit("ต้องตั้ง env ANTHROPIC_API_KEY ก่อนรัน (เช่น setx / export หรือไฟล์ .env)")
 client = anthropic.Anthropic()
 
 _HERE = os.path.dirname(os.path.abspath(__file__))

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "baseName": { "value": "propeval" },
+    "location": { "value": "southeastasia" },
+    "openaiLocation": { "value": "eastus" },
+    "modelName": { "value": "gpt-5.4-mini" },
+    "modelVersion": { "value": "2026-03-17" },
+    "sqlAdminObjectId": { "value": "a1e442e9-8c60-41b0-bd45-d3c457aa7a12" },
+    "sqlAdminLogin": { "value": "rungroj@CSIGROUPS.COM" }
+  }
+}

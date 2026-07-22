@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.python_packages/
+
+# Azure Functions
+api/local.settings.json
+bin/
+obj/
+.func/
+
+# Node / frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Env & secrets
+*.env
+.env.local
+local.settings.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
