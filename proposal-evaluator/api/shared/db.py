@@ -130,13 +130,14 @@ def put_settings(kv: dict) -> None:
 
 # ---------- Roles & Permissions (R3 — dynamic RBAC) ----------
 # หน้าที่คุมสิทธิ์ได้ (ตรงกับ nav 5 หน้า). matrix = role x page.
-PAGES = ("evaluate", "proposals", "library", "dashboard", "settings")
-# seed จาก hierarchy เดิม (PAGE_MIN_ROLE): user < manager < management < admin
+# view_all = สิทธิ์เห็นทุกโปรเจค (ไม่ใช่ nav page — เป็น permission flag; ไม่มี = เห็นเฉพาะที่ตัวเอง submit)
+PAGES = ("evaluate", "proposals", "library", "dashboard", "settings", "view_all")
+# seed จาก hierarchy เดิม: user < manager < management < admin (manager+ เห็นทุกโปรเจค)
 _SEED_ROLES = [
     ("user", 0, ["evaluate", "proposals"]),
-    ("manager", 0, ["evaluate", "proposals", "library"]),
-    ("management", 0, ["evaluate", "proposals", "library", "dashboard"]),
-    ("admin", 1, ["evaluate", "proposals", "library", "dashboard", "settings"]),
+    ("manager", 0, ["evaluate", "proposals", "library", "view_all"]),
+    ("management", 0, ["evaluate", "proposals", "library", "dashboard", "view_all"]),
+    ("admin", 1, ["evaluate", "proposals", "library", "dashboard", "settings", "view_all"]),
 ]
 
 
@@ -449,7 +450,7 @@ def get_evaluation(eval_id: str) -> dict:
 
     with _conn() as cn:
         head = cn.execute(
-            "SELECT submission_id, overall_score, verdict, skeleton_md, raw_llm_json FROM dbo.EvaluationResults WHERE eval_id=?",
+            "SELECT submission_id, overall_score, verdict, skeleton_md, raw_llm_json, model_name FROM dbo.EvaluationResults WHERE eval_id=?",
             eval_id,
         ).fetchone()
         details = cn.execute(
@@ -470,6 +471,7 @@ def get_evaluation(eval_id: str) -> dict:
         "recommendations": [{"priority": r[0], "rec_text": r[1], "slide_ref": r[2] or ""} for r in recs],
         "strengths": raw.get("strengths", []),
         "gaps": raw.get("gaps", []),
+        "model_name": head[5] or "",
     }
 
 
@@ -477,6 +479,19 @@ def set_submission_status(submission_id: str, status: str) -> None:
     with _conn() as cn:
         cn.execute("UPDATE dbo.Submissions SET status=? WHERE submission_id=?", status, submission_id)
         cn.commit()
+
+
+def get_submission(submission_id: str) -> dict | None:
+    """meta + text ของ submission (สำหรับ async worker + poll status). None ถ้าไม่มี."""
+    with _conn() as cn:
+        row = cn.execute(
+            "SELECT submission_id, thread_id, version_no, text_content, lang, status "
+            "FROM dbo.Submissions WHERE submission_id = ?", submission_id,
+        ).fetchone()
+    if not row:
+        return None
+    return {"submission_id": str(row[0]), "thread_id": str(row[1]), "version_no": int(row[2]),
+            "text_content": row[3] or "", "lang": row[4] or "en", "status": row[5]}
 
 
 # ---------- Comments (F26) ----------

@@ -36,11 +36,15 @@ export interface CommentRow {
 }
 
 export interface ExistingInfo {
+  thread_id: string;
   ticket_no: string;
+  client_name: string;
+  project_name: string;
   latest_version: number;
   next_version: number;
   latest_score: number | null;
   latest_verdict: Verdict | null;
+  evaluated_at: string | null;
 }
 
 export interface PrepareResult {
@@ -76,6 +80,7 @@ export interface EvaluationResult {
   project_name?: string;
   filename?: string;    // ไฟล์ต้นฉบับที่อัพโหลด (version ล่าสุด)
   file_url?: string;    // SAS URL เปิดไฟล์ต้นฉบับ (หมดอายุ ~4 ชม.)
+  model_name?: string;  // LLM model ที่ใช้ประเมินผลนี้
 }
 
 export interface ProposalRow {
@@ -110,12 +115,24 @@ export async function prepare(file: File): Promise<PrepareResult> {
   return res.json();
 }
 
-/** F24/F25 — confirm client/project + เลือกภาษา output แล้วประเมิน (หรือ reuse) */
-export async function evaluate(p: PrepareResult, client_name: string, project_name: string, lang: Lang): Promise<EvaluationResult> {
-  return post<EvaluationResult>("/api/evaluate", {
+/** async eval — cache hit คืน status:"done" + result เต็ม; ต้องเรียก LLM คืน status:"processing" ให้ poll */
+export interface EvalProcessing {
+  status: "processing";
+  submission_id: string;
+  thread_id: string;
+  ticket_no: string;
+  version_no: number;
+  lang: Lang;
+}
+export type EvaluateResponse = (EvaluationResult & { status?: "done" }) | EvalProcessing;
+
+/** F24/F25 — confirm client/project + เลือกภาษา output แล้วประเมิน (reuse=ทันที / LLM=async poll) */
+export async function evaluate(p: PrepareResult, client_name: string, project_name: string, lang: Lang, threadId?: string): Promise<EvaluateResponse> {
+  return post<EvaluateResponse>("/api/evaluate", {
     client_name,
     project_name,
     lang,
+    thread_id: threadId ?? "",   // R5 — เลือกโปรเจคเจาะจง (version ใหม่ของ thread นี้)
     text: p.text,
     content_hash: p.content_hash,
     blob_url: p.blob_url,
@@ -123,6 +140,11 @@ export async function evaluate(p: PrepareResult, client_name: string, project_na
     content_type: p.content_type,
     file_size: p.file_size,
   });
+}
+
+/** poll สถานะ async eval — Evaluating|Evaluated|Failed */
+export async function getSubmissionStatus(submissionId: string): Promise<{ status: string; thread_id: string }> {
+  return get<{ status: string; thread_id: string }>(`/api/submissions/${submissionId}/status`);
 }
 
 /** F26 — add user comment */
@@ -138,8 +160,8 @@ async function get<T>(url: string): Promise<T> {
 }
 
 /** F18/F19 — รายการทุก proposal (1 แถว/thread) */
-export async function listProposals(): Promise<ProposalRow[]> {
-  return get<ProposalRow[]>("/api/proposals");
+export async function listProposals(scope?: "mine"): Promise<ProposalRow[]> {
+  return get<ProposalRow[]>("/api/proposals" + (scope ? `?scope=${scope}` : ""));
 }
 
 /** F17 — ผลประเมินเต็มของ version ล่าสุดใน thread (shape เดียวกับ evaluate) */
@@ -335,6 +357,7 @@ export interface AppSettings {
   default_lang: string;
   default_currency: string;
   llm_provider: LlmProvider;
+  active_model?: string;       // ชื่อ model ปัจจุบันที่ใช้ประเมิน (ทุก role เห็น)
   local_llm_ready?: boolean;   // admin-only — env (base_url+model) ตั้งครบไหม
   local_llm_model?: string;    // admin-only — model จาก env (read-only)
 }

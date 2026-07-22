@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import {
-  prepare, evaluate, addComment, listProposals, getThread,
+  prepare, evaluate, addComment, listProposals, getThread, getSubmissionStatus,
   listLibrary, getLibraryItem, updateLibraryItem, getDashboard,
   getMe, listUsers, addUser, setUserRole, listMasterData, addMasterData, deleteMasterData, getSettings, putSettings, getLlmModels,
   getRoles, initRbac, createRole, deleteRole, setRolePermissions, getPresentationCoach,
@@ -103,8 +103,7 @@ const PROP_COLS: { key: SortKey; label: string }[] = [
   { key: "ticket_no", label: "Ticket" },
   { key: "client_name", label: "Client" },
   { key: "project_name", label: "Project" },
-  { key: "version_no", label: "Latest" },
-  { key: "version_count", label: "Versions" },
+  { key: "version_no", label: "Version" },
   { key: "overall_score", label: "Score" },
   { key: "verdict", label: "Verdict" },
   { key: "score_source", label: "Source" },
@@ -508,6 +507,7 @@ function MasterList({ category, title }: { category: "solution_type" | "industry
   const [val, setVal] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [show, setShow] = useState(false);
   useEffect(() => { listMasterData(category).then(setRows).catch((e) => setErr(String(e))); }, [category]);
   async function add() {
     if (!val.trim()) return;
@@ -522,21 +522,28 @@ function MasterList({ category, title }: { category: "solution_type" | "industry
   }
   return (
     <div className="card card-pad">
-      <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>{title}</div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
-        {rows.map((r) => (
-          <span key={r.id} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "var(--surface-2)", borderRadius: 999, padding: "5px 8px 5px 12px", fontSize: 13 }}>
-            {r.value}
-            <button className="btn-ghost" style={{ padding: "0 6px", lineHeight: 1 }} onClick={() => del(r.id)} disabled={busy} title="Remove">✕</button>
-          </span>
-        ))}
-        {rows.length === 0 && <span style={{ color: "var(--text-3)", fontSize: 13 }}>ยังไม่มีรายการ</span>}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: show ? 12 : 0 }}>
+        <span style={{ fontSize: 15, fontWeight: 700 }}>{title} <span style={{ color: "var(--text-3)", fontWeight: 500, fontSize: 12.5 }}>({rows.length})</span></span>
+        <button className="btn-ghost" style={{ padding: "5px 14px", fontSize: 13 }} onClick={() => setShow((v) => !v)}>{show ? "ซ่อน" : "แสดง"}</button>
       </div>
-      <div style={{ display: "flex", gap: 8 }}>
-        <input className="field" style={{ flex: 1 }} value={val} placeholder={`เพิ่ม ${title}…`} onChange={(e) => setVal(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} />
-        <button className="btn" onClick={add} disabled={busy || !val.trim()}>Add</button>
-      </div>
-      {err && <p style={{ color: "var(--red)", margin: "8px 0 0" }}>Error: {err}</p>}
+      {show && (
+        <>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+            {rows.map((r) => (
+              <span key={r.id} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "var(--surface-2)", borderRadius: 999, padding: "5px 8px 5px 12px", fontSize: 13 }}>
+                {r.value}
+                <button className="btn-ghost" style={{ padding: "0 6px", lineHeight: 1 }} onClick={() => del(r.id)} disabled={busy} title="Remove">✕</button>
+              </span>
+            ))}
+            {rows.length === 0 && <span style={{ color: "var(--text-3)", fontSize: 13 }}>ยังไม่มีรายการ</span>}
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input className="field" style={{ flex: 1 }} value={val} placeholder={`เพิ่ม ${title}…`} onChange={(e) => setVal(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} />
+            <button className="btn" onClick={add} disabled={busy || !val.trim()}>Add</button>
+          </div>
+          {err && <p style={{ color: "var(--red)", margin: "8px 0 0" }}>Error: {err}</p>}
+        </>
+      )}
     </div>
   );
 }
@@ -545,6 +552,7 @@ function AuditDefaults() {
   const [s, setS] = useState<AppSettings>({ default_lang: "th", default_currency: "THB", llm_provider: "azure" });
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [show, setShow] = useState(false);
   useEffect(() => { getSettings().then(setS).catch(() => {}); }, []);
   async function save() {
     setSaving(true); setMsg(null);
@@ -553,23 +561,30 @@ function AuditDefaults() {
   }
   return (
     <div className="card card-pad">
-      <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Audit defaults</div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, maxWidth: 420 }}>
-        <div>
-          <div className="field-label">Default output language</div>
-          <select className="field" value={s.default_lang ?? "th"} onChange={(e) => setS({ ...s, default_lang: e.target.value })}>
-            <option value="th">Thai</option><option value="en">English</option>
-          </select>
-        </div>
-        <div>
-          <div className="field-label">Default currency</div>
-          <input className="field" value={s.default_currency ?? "THB"} onChange={(e) => setS({ ...s, default_currency: e.target.value })} placeholder="THB" />
-        </div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: show ? 12 : 0 }}>
+        <span style={{ fontSize: 15, fontWeight: 700 }}>Audit defaults</span>
+        <button className="btn-ghost" style={{ padding: "5px 14px", fontSize: 13 }} onClick={() => setShow((v) => !v)}>{show ? "ซ่อน" : "แสดง"}</button>
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14 }}>
-        <button className="btn" onClick={save} disabled={saving}>{saving ? "Saving…" : "Save defaults"}</button>
-        {msg && <span style={{ fontSize: 13, color: "var(--text-2)" }}>{msg}</span>}
-      </div>
+      {show && (
+        <>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, maxWidth: 420 }}>
+            <div>
+              <div className="field-label">Default output language</div>
+              <select className="field" value={s.default_lang ?? "th"} onChange={(e) => setS({ ...s, default_lang: e.target.value })}>
+                <option value="th">Thai</option><option value="en">English</option>
+              </select>
+            </div>
+            <div>
+              <div className="field-label">Default currency</div>
+              <input className="field" value={s.default_currency ?? "THB"} onChange={(e) => setS({ ...s, default_currency: e.target.value })} placeholder="THB" />
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14 }}>
+            <button className="btn" onClick={save} disabled={saving}>{saving ? "Saving…" : "Save defaults"}</button>
+            {msg && <span style={{ fontSize: 13, color: "var(--text-2)" }}>{msg}</span>}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -582,6 +597,7 @@ function UserManagement({ myEmail }: { myEmail: string | null }) {
   const [newRole, setNewRole] = useState<Role>("user");
   const [adding, setAdding] = useState(false);
   const [roleNames, setRoleNames] = useState<string[]>([]);
+  const [show, setShow] = useState(false); // default ซ่อนรายละเอียด users
   useEffect(() => { listUsers().then(setUsers).catch((e) => setErr(e instanceof Error ? e.message : String(e))); }, []);
   useEffect(() => { getRoles().then((r) => setRoleNames(r.roles.map((x) => x.name))).catch(() => {}); }, []);
   async function change(userId: string, role: Role) {
@@ -597,36 +613,43 @@ function UserManagement({ myEmail }: { myEmail: string | null }) {
   }
   return (
     <div className="card" style={{ overflow: "hidden" }}>
-      <div style={{ padding: "14px 18px", fontSize: 15, fontWeight: 700, borderBottom: "1px solid var(--border)" }}>User Management</div>
-      {err && <div style={{ padding: "10px 18px", color: "var(--red)" }}>Error: {err}</div>}
-      <div style={{ display: "flex", gap: 8, padding: "14px 18px", borderBottom: "1px solid var(--border)", flexWrap: "wrap", alignItems: "center" }}>
-        <input className="field" style={{ flex: 2, minWidth: 220 }} value={newEmail} placeholder="เพิ่ม user ด้วย email (เช่น somchai@csigroups.com)"
-          onChange={(e) => setNewEmail(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} />
-        <select className="field" style={{ width: 160 }} value={newRole} onChange={(e) => setNewRole(e.target.value as Role)}>
-          {roleNames.map((r) => <option key={r} value={r}>{ROLE_LABEL[r] ?? r}</option>)}
-        </select>
-        <button className="btn" onClick={add} disabled={adding || !newEmail.includes("@")}>{adding ? "Adding…" : "Add user"}</button>
+      <div style={{ padding: "14px 18px", borderBottom: show ? "1px solid var(--border)" : "none", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span style={{ fontSize: 15, fontWeight: 700 }}>User Management <span style={{ color: "var(--text-3)", fontWeight: 500, fontSize: 12.5 }}>({users.length})</span></span>
+        <button className="btn-ghost" style={{ padding: "5px 14px", fontSize: 13 }} onClick={() => setShow((s) => !s)}>{show ? "ซ่อน" : "แสดง"}</button>
       </div>
-      <table className="tbl">
-        <thead><tr><th>User</th><th>Email</th><th>Role</th></tr></thead>
-        <tbody>
-          {users.map((u) => (
-            <tr key={u.user_id}>
-              <td style={{ fontWeight: 600 }}>{u.display_name || "-"}{u.email?.toLowerCase() === (myEmail ?? "").toLowerCase() && <span style={{ color: "var(--text-3)", fontWeight: 400 }}> (you)</span>}</td>
-              <td style={{ color: "var(--text-2)" }}>{u.email}</td>
-              <td style={{ width: 180 }}>
-                <select className="field" value={u.role} disabled={busyId === u.user_id} onChange={(e) => change(u.user_id, e.target.value as Role)}>
-                  {roleNames.map((r) => <option key={r} value={r}>{ROLE_LABEL[r] ?? r}</option>)}
-                </select>
-              </td>
-            </tr>
-          ))}
-          {users.length === 0 && <tr><td colSpan={3} style={{ padding: "24px 18px", color: "var(--text-3)" }}>ยังไม่มี user (จะปรากฏเมื่อมีคน login ผ่าน SSO)</td></tr>}
-        </tbody>
-      </table>
-      <div style={{ padding: "12px 18px", fontSize: 12.5, color: "var(--text-3)", borderTop: "1px solid var(--border)" }}>
-        กำหนดสิทธิ์ว่าแต่ละ role เห็นเมนูหน้าไหนได้ ที่ตาราง “Roles &amp; Permissions” ด้านล่าง
-      </div>
+      {show && (
+        <>
+          {err && <div style={{ padding: "10px 18px", color: "var(--red)" }}>Error: {err}</div>}
+          <div style={{ display: "flex", gap: 8, padding: "14px 18px", borderBottom: "1px solid var(--border)", flexWrap: "wrap", alignItems: "center" }}>
+            <input className="field" style={{ flex: 2, minWidth: 220 }} value={newEmail} placeholder="เพิ่ม user ด้วย email (เช่น somchai@csigroups.com)"
+              onChange={(e) => setNewEmail(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} />
+            <select className="field" style={{ width: 160 }} value={newRole} onChange={(e) => setNewRole(e.target.value as Role)}>
+              {roleNames.map((r) => <option key={r} value={r}>{ROLE_LABEL[r] ?? r}</option>)}
+            </select>
+            <button className="btn" onClick={add} disabled={adding || !newEmail.includes("@")}>{adding ? "Adding…" : "Add user"}</button>
+          </div>
+          <table className="tbl">
+            <thead><tr><th>User</th><th>Email</th><th>Role</th></tr></thead>
+            <tbody>
+              {users.map((u) => (
+                <tr key={u.user_id}>
+                  <td style={{ fontWeight: 600 }}>{u.display_name || "-"}{u.email?.toLowerCase() === (myEmail ?? "").toLowerCase() && <span style={{ color: "var(--text-3)", fontWeight: 400 }}> (you)</span>}</td>
+                  <td style={{ color: "var(--text-2)" }}>{u.email}</td>
+                  <td style={{ width: 180 }}>
+                    <select className="field" value={u.role} disabled={busyId === u.user_id} onChange={(e) => change(u.user_id, e.target.value as Role)}>
+                      {roleNames.map((r) => <option key={r} value={r}>{ROLE_LABEL[r] ?? r}</option>)}
+                    </select>
+                  </td>
+                </tr>
+              ))}
+              {users.length === 0 && <tr><td colSpan={3} style={{ padding: "24px 18px", color: "var(--text-3)" }}>ยังไม่มี user (จะปรากฏเมื่อมีคน login ผ่าน SSO)</td></tr>}
+            </tbody>
+          </table>
+          <div style={{ padding: "12px 18px", fontSize: 12.5, color: "var(--text-3)", borderTop: "1px solid var(--border)" }}>
+            กำหนดสิทธิ์ว่าแต่ละ role เห็นเมนูหน้าไหนได้ ที่ตาราง “Roles &amp; Permissions” ด้านล่าง
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -642,6 +665,7 @@ function LlmProviderSettings() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [show, setShow] = useState(false);
 
   useEffect(() => {
     getSettings().then((s) => {
@@ -674,8 +698,13 @@ function LlmProviderSettings() {
 
   return (
     <div className="card card-pad">
-      <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>LLM Provider</div>
-      <div style={{ fontSize: 12.5, color: "var(--text-3)", marginBottom: 14 }}>เครื่องมือ AI ที่ใช้ประเมิน proposal — สลับแล้วมีผลทั้งระบบทันที (endpoint/token ของ Local ตั้งที่ env ของ Function App)</div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: show ? 14 : 0 }}>
+        <span style={{ fontSize: 15, fontWeight: 700 }}>LLM Provider</span>
+        <button className="btn-ghost" style={{ padding: "5px 14px", fontSize: 13 }} onClick={() => setShow((v) => !v)}>{show ? "ซ่อน" : "แสดง"}</button>
+      </div>
+      {show && (
+        <>
+          <div style={{ fontSize: 12.5, color: "var(--text-3)", marginBottom: 14 }}>เครื่องมือ AI ที่ใช้ประเมิน proposal — สลับแล้วมีผลทั้งระบบทันที (endpoint/token ของ Local ตั้งที่ env ของ Function App)</div>
       <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
         {(["azure", "local"] as LlmProvider[]).map((p) => (
           <button key={p} onClick={() => setProvider(p)}
@@ -727,6 +756,8 @@ function LlmProviderSettings() {
         {msg && <span style={{ fontSize: 13, color: "var(--green)" }}>{msg}</span>}
         {err && <span style={{ fontSize: 13, color: "var(--red)" }}>{err}</span>}
       </div>
+        </>
+      )}
     </div>
   );
 }
@@ -734,7 +765,7 @@ function LlmProviderSettings() {
 /* ---------- Roles & Permissions (R3) — dynamic RBAC matrix (role x page) ---------- */
 const PAGE_LABEL: Record<string, string> = {
   evaluate: "New Evaluation", proposals: "Evaluation Resulted", library: "Proposal Library",
-  dashboard: "Dashboard", settings: "Settings",
+  dashboard: "Dashboard", settings: "Settings", view_all: "เห็นทุกโปรเจค",
 };
 function RolesPermissions() {
   const [roles, setRoles] = useState<RoleRow[]>([]);
@@ -744,6 +775,7 @@ function RolesPermissions() {
   const [err, setErr] = useState<string | null>(null);
   const [notInit, setNotInit] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [show, setShow] = useState(false);
 
   function apply(r: { roles: RoleRow[]; pages: string[] }) { setRoles(r.roles); setPages(r.pages); }
   useEffect(() => {
@@ -771,9 +803,13 @@ function RolesPermissions() {
 
   return (
     <div className="card" style={{ overflow: "hidden" }}>
-      <div style={{ padding: "14px 18px", fontSize: 15, fontWeight: 700, borderBottom: "1px solid var(--border)" }}>
-        Roles &amp; Permissions<span style={{ color: "var(--text-3)", fontWeight: 500, fontSize: 12.5 }}> — กำหนดว่าแต่ละ role เห็นเมนูหน้าไหนได้</span>
+      <div onClick={() => setShow((v) => !v)}
+        style={{ padding: "14px 18px", borderBottom: show ? "1px solid var(--border)" : "none", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}>
+        <span style={{ fontSize: 15, fontWeight: 700 }}>Roles &amp; Permissions<span style={{ color: "var(--text-3)", fontWeight: 500, fontSize: 12.5 }}> — กำหนดว่าแต่ละ role เห็นเมนูหน้าไหนได้</span></span>
+        <button className="btn-ghost" style={{ padding: "5px 14px", fontSize: 13 }}>{show ? "ซ่อน" : "แสดง"}</button>
       </div>
+      {show && (
+        <>
       {err && <div style={{ padding: "10px 18px", color: "var(--red)" }}>Error: {err}</div>}
       {!loaded ? (
         <div style={{ padding: "18px", color: "var(--text-3)" }}>Loading…</div>
@@ -824,6 +860,8 @@ function RolesPermissions() {
           </div>
         </>
       )}
+        </>
+      )}
     </div>
   );
 }
@@ -834,9 +872,9 @@ function SettingsView({ me }: { me: Me }) {
       <div className="h-title">Settings</div>
       <div className="h-sub">Master data, audit defaults, and user access — Master Admin only.</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+        <LlmProviderSettings />
         <UserManagement myEmail={me.email} />
         <RolesPermissions />
-        <LlmProviderSettings />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 22 }}>
           <MasterList category="solution_type" title="Solution Type" />
           <MasterList category="industry" title="Industry" />
@@ -919,6 +957,11 @@ export default function App() {
   const [comment, setComment] = useState("");
   const [tab, setTab] = useState<TabKey>("history");
   const [lang, setLang] = useState<Lang>("th"); // audit output language
+  const [activeModel, setActiveModel] = useState(""); // LLM model ปัจจุบันที่จะใช้ประเมิน
+  // R5 — โหมดเลือกโปรเจคใน confirm modal
+  const [projectMode, setProjectMode] = useState<"existing" | "select" | "new">("new");
+  const [selectedTid, setSelectedTid] = useState(""); // thread ที่เลือกจากรายชื่อ (mode select)
+  const [modalProposals, setModalProposals] = useState<ProposalRow[]>([]);
   const [proposals, setProposals] = useState<ProposalRow[] | null>(null);
   const [listBusy, setListBusy] = useState(false);
   const [listError, setListError] = useState<string | null>(null);
@@ -946,6 +989,7 @@ export default function App() {
       .then((m) => {
         if (!m.authenticated) { window.location.href = "/login"; return; }
         setMe(m);
+        getSettings().then((s) => setActiveModel(s.active_model || "")).catch(() => {});
         // ถ้าหน้าเริ่มต้นไม่มีสิทธิ์ -> ย้ายไปหน้าแรกที่เข้าได้
         setNav((cur) => (m.access[cur as PageKey] ? cur : (["evaluate", "proposals", "library", "dashboard", "settings"] as PageKey[]).find((p) => m.access[p]) ?? "evaluate"));
       })
@@ -1017,14 +1061,46 @@ export default function App() {
     try {
       const p = await prepare(file);
       setPrep(p); setClient(p.suggested_client); setProject(p.suggested_project);
+      setProjectMode(p.existing ? "existing" : "new");  // R5 — เดิมถ้า detect เจอ, ไม่งั้นใหม่
+      setSelectedTid(p.existing?.thread_id ?? "");
+      listProposals("mine").then(setModalProposals).catch(() => {});  // dropdown = เฉพาะโปรเจคที่ user submit เอง
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); } finally { setBusy(""); }
+  }
+  // poll สถานะ async eval (LLM) จนเสร็จ — ~ทุก 3 วิ สูงสุด ~10 นาที
+  async function pollEvaluation(submissionId: string, threadId: string) {
+    for (let i = 0; i < 200; i++) {
+      await new Promise((res) => setTimeout(res, 3000));
+      const st = await getSubmissionStatus(submissionId);
+      if (st.status === "Evaluated") {
+        const full = await getThread(threadId);
+        setResult(full); setPrep(null); setTab("history"); setNav("proposals");
+        return;
+      }
+      if (st.status === "Failed") throw new Error("การประเมินล้มเหลว — ลองใหม่อีกครั้ง");
+    }
+    throw new Error("ประเมินใช้เวลานานผิดปกติ — ดูผลที่หน้า Evaluation Resulted ภายหลัง");
   }
   async function onConfirm() {
     if (!prep) return;
+    // R5 — resolve thread + client/project ตามโหมดที่เลือก
+    let tid: string | undefined; let cn = client; let pn = project;
+    if (projectMode === "existing" && prep.existing) {
+      tid = prep.existing.thread_id; cn = prep.existing.client_name; pn = prep.existing.project_name;
+    } else if (projectMode === "select") {
+      if (!selectedTid) { setError("กรุณาเลือกโปรเจคจากรายชื่อ"); return; }
+      tid = selectedTid;
+      const sp = modalProposals.find((x) => x.thread_id === selectedTid);
+      cn = sp?.client_name || client; pn = sp?.project_name || project;
+    }
+    if (!cn.trim() || !pn.trim()) { setError("ต้องมีชื่อ client และ project"); return; }
     setBusy("evaluate"); setError(null);
     try {
-      const r = await evaluate(prep, client, project, lang);
-      setResult(r); setPrep(null); setTab("history"); setNav("proposals");
+      const r = await evaluate(prep, cn, pn, lang, tid);
+      if ("status" in r && r.status === "processing") {
+        await pollEvaluation(r.submission_id, r.thread_id);  // LLM async -> poll จนเสร็จ
+      } else {
+        setResult(r as EvaluationResult); setPrep(null); setTab("history"); setNav("proposals");  // cache hit -> ทันที
+      }
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); } finally { setBusy(""); }
   }
   async function onAddComment() {
@@ -1158,7 +1234,7 @@ export default function App() {
                     <span className="pill" style={{ background: "var(--surface-2)", color: "var(--text-2)" }}>{result.lang === "th" ? "TH" : "EN"}</span>
                   </div>
                   <div style={{ fontSize: 15, marginBottom: 6 }}><span style={{ color: "var(--text-2)" }}>Client:</span> <b>{client || "-"}</b> <span style={{ color: "var(--text-3)", margin: "0 8px" }}>·</span> <span style={{ color: "var(--text-2)" }}>Project:</span> <b>{project || "-"}</b></div>
-                  <div style={{ fontSize: 14, color: "var(--text-2)", marginBottom: 16 }}>Current version: <b style={{ color: "var(--text)" }}>v{result.version_no}</b> · {result.history.length} version(s) total</div>
+                  <div style={{ fontSize: 14, color: "var(--text-2)", marginBottom: 16 }}>Version <b style={{ color: "var(--text)" }}>v{result.version_no}</b> จาก {result.history.length} เวอร์ชัน{result.model_name && <> · Model: <b style={{ color: "var(--text)" }}>{result.model_name}</b></>}</div>
                   {result.gate_note && <div className="note" style={{ width: "fit-content" }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="1.9" style={{ flexShrink: 0, marginTop: 1 }}><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><circle cx="12" cy="7.6" r=".7" fill="var(--primary)" stroke="none"/></svg><span>{result.gate_note}</span></div>}
                   {result.file_url && (
                     <a href={result.file_url} target="_blank" rel="noopener noreferrer" title={result.filename}
@@ -1293,7 +1369,6 @@ export default function App() {
                           <td>{p.client_name || "-"}</td>
                           <td>{p.project_name || "-"}</td>
                           <td className="num">v{p.version_no}</td>
-                          <td className="num" style={{ color: "var(--text-2)" }}>{p.version_count}</td>
                           <td className="num" style={{ fontWeight: 800, color: p.overall_score != null ? scoreVar(Number(p.overall_score)) : "var(--text-3)" }}>{p.overall_score != null ? Number(p.overall_score).toFixed(2) : "-"}</td>
                           <td style={{ color: verdictVar[p.verdict ?? ""] ?? "var(--text-3)" }}>{p.verdict ?? "-"}</td>
                           <td style={{ color: "var(--text-2)" }}>{p.score_source ?? "-"}</td>
@@ -1397,13 +1472,43 @@ export default function App() {
               <div style={{ fontSize: 13.5, color: "var(--text-2)", marginTop: 3 }}>Detected the following from the file — you can edit before confirming.</div>
             </div>
             <div className="modal-body">
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                <div><div className="field-label">Client name {prep.suggested_client && <span className="pill-detected">detected</span>}</div><input className="field" value={client} onChange={(e) => setClient(e.target.value)} placeholder="Client name" /></div>
-                <div><div className="field-label">Project name {prep.suggested_project && <span className="pill-detected">detected</span>}</div><input className="field" value={project} onChange={(e) => setProject(e.target.value)} placeholder="Project name" /></div>
+              <div>
+                <div className="field-label">โปรเจค</div>
+                <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+                  {(([["existing", "โปรเจคเดิม (ที่ตรวจพบ)"], ["select", "เลือกจากรายชื่อ"], ["new", "โปรเจคใหม่"]] as [typeof projectMode, string][])
+                    .filter(([m]) => m !== "existing" || prep.existing)).map(([m, lbl]) => (
+                    <button key={m} onClick={() => setProjectMode(m)}
+                      style={{ padding: "8px 14px", borderRadius: 9, cursor: "pointer", fontSize: 13, fontWeight: 700,
+                        border: "1px solid " + (projectMode === m ? "var(--primary)" : "var(--border-strong)"),
+                        background: projectMode === m ? "var(--primary-soft)" : "var(--surface)",
+                        color: projectMode === m ? "var(--primary)" : "var(--text-2)" }}>{lbl}</button>
+                  ))}
+                </div>
+                {projectMode === "existing" && prep.existing && (
+                  <div style={{ fontSize: 13.5, color: "var(--text-2)", background: "var(--surface-2)", borderRadius: 9, padding: "10px 14px", lineHeight: 1.6 }}>
+                    <b style={{ color: "var(--text)" }}>{prep.existing.client_name}</b> / <b style={{ color: "var(--text)" }}>{prep.existing.project_name}</b><br />
+                    {prep.existing.ticket_no} · จะประเมินเป็นเวอร์ชัน v{prep.existing.next_version}
+                  </div>
+                )}
+                {projectMode === "select" && (
+                  <select className="field" value={selectedTid} onChange={(e) => setSelectedTid(e.target.value)}>
+                    <option value="">— เลือกโปรเจคจากรายชื่อ —</option>
+                    {modalProposals.map((pp) => (
+                      <option key={pp.thread_id} value={pp.thread_id}>{pp.ticket_no} — {pp.client_name || "?"} / {pp.project_name || "?"}</option>
+                    ))}
+                  </select>
+                )}
+                {projectMode === "new" && (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                    <div><div className="field-label">Client name {prep.suggested_client && <span className="pill-detected">detected</span>}</div><input className="field" value={client} onChange={(e) => setClient(e.target.value)} placeholder="Client name" /></div>
+                    <div><div className="field-label">Project name {prep.suggested_project && <span className="pill-detected">detected</span>}</div><input className="field" value={project} onChange={(e) => setProject(e.target.value)} placeholder="Project name" /></div>
+                  </div>
+                )}
               </div>
               <div style={{ display: "flex", gap: 14 }}>
                 <div className="tile"><div className="tile-k">Ticket</div><div className="tile-v num">{prep.existing ? prep.existing.ticket_no : "New (issued on confirm)"}</div></div>
                 <div className="tile"><div className="tile-k">Version</div><div className="tile-v">v{prep.existing ? prep.existing.next_version : 1}</div></div>
+                <div className="tile"><div className="tile-k">AI Model</div><div className="tile-v">{activeModel || "—"}</div></div>
               </div>
               <div>
                 <div className="field-label">Audit output language</div>
@@ -1419,7 +1524,7 @@ export default function App() {
                   ))}
                 </div>
               </div>
-              {prep.existing && prep.existing.latest_score != null && (
+              {projectMode === "existing" && prep.existing && prep.existing.latest_score != null && (
                 <div style={{ border: "1px solid var(--border)", borderRadius: 11, padding: "14px 16px", display: "flex", alignItems: "center", gap: 14, background: "var(--surface-2)" }}>
                   <div><div style={{ fontSize: 12, color: "var(--text-2)" }}>Previously submitted — latest score</div>
                     <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
@@ -1427,6 +1532,7 @@ export default function App() {
                       <span style={{ fontSize: 13, color: "var(--text-3)" }}>/ 10</span>
                       <span style={{ marginLeft: 4, background: verdictSoft[prep.existing.latest_verdict ?? ""], color: verdictVar[prep.existing.latest_verdict ?? ""], padding: "3px 10px", borderRadius: 999, fontSize: 12, fontWeight: 700 }}>{prep.existing.latest_verdict}</span>
                     </div>
+                    {prep.existing.evaluated_at && <div style={{ fontSize: 11.5, color: "var(--text-3)", marginTop: 3 }}>ประเมินล่าสุด: {prep.existing.evaluated_at.slice(0, 16).replace("T", " ")}</div>}
                   </div>
                 </div>
               )}
@@ -1435,9 +1541,14 @@ export default function App() {
               </div>
               {error && <p style={{ color: "var(--red)", margin: 0 }}>Error: {error}</p>}
             </div>
+            {busy === "evaluate" && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 4px", fontSize: 12.5, color: "var(--text-3)" }}>
+                <span>⏳</span> กำลังประเมินด้วย AI — อาจใช้เวลาสักครู่ (โปรดอย่าปิดหน้านี้)
+              </div>
+            )}
             <div className="modal-foot">
               <button className="btn-ghost" onClick={() => setPrep(null)} disabled={busy !== ""}>Cancel</button>
-              <button className="btn" onClick={onConfirm} disabled={busy !== "" || !client.trim() || !project.trim()}>{busy === "evaluate" ? "Evaluating…" : "Confirm & Evaluate"}</button>
+              <button className="btn" onClick={onConfirm} disabled={busy !== "" || (projectMode === "new" && (!client.trim() || !project.trim())) || (projectMode === "select" && !selectedTid)}>{busy === "evaluate" ? "Evaluating…" : "Confirm & Evaluate"}</button>
             </div>
           </div>
         </div>

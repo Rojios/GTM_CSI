@@ -115,11 +115,15 @@ def prepare(req: func.HttpRequest) -> func.HttpResponse:
                 scores = db.get_thread_scores(thread["thread_id"])
                 latest = scores[-1] if scores else None
                 existing = {
+                    "thread_id": thread["thread_id"],
                     "ticket_no": thread["ticket_no"],
+                    "client_name": meta.client_name,
+                    "project_name": meta.project_name,
                     "latest_version": prior["version_no"] if prior else 0,
                     "next_version": (prior["version_no"] + 1) if prior else 1,
                     "latest_score": float(latest["overall_score"]) if latest and latest["overall_score"] is not None else None,
                     "latest_verdict": latest["verdict"] if latest else None,
+                    "evaluated_at": str(latest["evaluated_at"]) if latest and latest.get("evaluated_at") else None,
                 }
 
         return _json({
@@ -139,8 +143,10 @@ def prepare(req: func.HttpRequest) -> func.HttpResponse:
 
 
 @app.route(route="evaluate", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
-def evaluate(req: func.HttpRequest) -> func.HttpResponse:
-    """F11/F12/F24/F25 — confirm client/project -> cache/gate -> evaluate or reuse -> persist."""
+@app.queue_output(arg_name="msg", queue_name="eval-jobs", connection="AzureWebJobsStorage")
+def evaluate(req: func.HttpRequest, msg: func.Out[str]) -> func.HttpResponse:
+    """F11/F24/F25 — confirm. cache hit -> reuse ทันที (sync); ต้องเรียก LLM -> enqueue รัน async
+    (frontend poll /api/submissions/{id}/status). endpoint นี้ไม่เรียก LLM เอง -> ไม่ชน HTTP timeout."""
     try:
         b = req.get_json()
         client_name = (b.get("client_name") or "").strip()
@@ -156,76 +162,132 @@ def evaluate(req: func.HttpRequest) -> func.HttpResponse:
 
         # find/create thread + ticket (F21/F22) — set owner จาก user ที่ login (F44)
         me = auth.current_user(req)
-        thread = db.find_thread_by_client_project(client_name, project_name)
-        if thread:
-            thread_id, ticket_no = thread["thread_id"], thread["ticket_no"]
+        override_tid = (b.get("thread_id") or "").strip()
+        if override_tid:
+            # R5 — user เลือกโปรเจคเจาะจงจากรายชื่อ -> ประเมินเป็น version ใหม่ของ thread นั้น
+            t = db.get_thread(override_tid)
+            if not t:
+                return _json({"error": "ไม่พบโปรเจคที่เลือก"}, 400)
+            thread_id, ticket_no = override_tid, t["ticket_no"]
         else:
-            ticket_no = db.issue_ticket(datetime.now(timezone.utc).year)
-            thread_id = db.create_thread(client_name, project_name, ticket_no, owner_id=me["user_id"])
+            thread = db.find_thread_by_client_project(client_name, project_name)
+            if thread:
+                thread_id, ticket_no = thread["thread_id"], thread["ticket_no"]
+            else:
+                ticket_no = db.issue_ticket(datetime.now(timezone.utc).year)
+                thread_id = db.create_thread(client_name, project_name, ticket_no, owner_id=me["user_id"])
 
         version_no = db.next_version_no(thread_id)
-        prior = db.latest_evaluated_submission(thread_id)  # ก่อนสร้าง submission ปัจจุบัน
-
         submission_id = db.create_submission(
             thread_id, version_no, b.get("filename", "proposal"), b.get("content_type", ""),
             b.get("blob_url", ""), int(b.get("file_size", 0)), chash, text, lang,
         )
 
-        def _full_eval() -> str:
-            llm = evaluate_proposal(text, lang=lang)
-            overall = scoring.compute_overall_score(llm.score_details)
-            return db.save_evaluation(submission_id, overall, scoring.map_verdict(overall),
-                                      llm, llm.model_dump_json(), _MODEL, "evaluated")
+        # F24 — cache hit (เนื้อหา+ภาษาเดิมเป๊ะ) -> reuse ทันที ไม่ต้องเรียก LLM (sync เร็ว)
+        cached_eval_id = db.find_eval_by_hash(thread_id, chash, lang)
+        if cached_eval_id:
+            eval_id = db.copy_evaluation(submission_id, cached_eval_id)
+            try:
+                _extract_and_store_content(thread_id, submission_id, chash, text)
+            except Exception:  # noqa: BLE001
+                logging.exception("project content extraction failed (non-fatal)")
+            result = db.get_evaluation(eval_id)
+            return _json({
+                "status": "done",
+                "thread_id": thread_id, "ticket_no": ticket_no, "version_no": version_no,
+                "submission_id": submission_id, "score_source": "reused",
+                "gate_note": "identical content + language (cache hit)", "lang": lang,
+                "filename": b.get("filename", "proposal"), "file_url": _sas_url(b.get("blob_url", "")),
+                **result,
+                "history": db.get_thread_scores(thread_id),
+                "comments": db.get_comments(thread_id),
+            })
 
-        try:
-            source, gate_note = "evaluated", ""
-            cached_eval_id = db.find_eval_by_hash(thread_id, chash, lang)
-
-            if cached_eval_id:
-                # F24 — เนื้อหา + ภาษาเดิมเป๊ะ -> reuse (คะแนนคงที่ 100%)
-                eval_id = db.copy_evaluation(submission_id, cached_eval_id)
-                source, gate_note = "reused", "identical content + language (cache hit)"
-            elif prior is not None:
-                content_changed = prior["content_hash"] != chash
-                lang_changed = prior["lang"] != lang
-                if not content_changed:
-                    # เนื้อหาเดิมแต่ cache ไม่ hit -> ภาษาเปลี่ยน -> ประเมินใหม่ในภาษาที่เลือก
-                    eval_id = _full_eval()
-                    gate_note = "same content, different output language → re-evaluated"
-                else:
-                    # F25 — เนื้อหาเปลี่ยน -> เช็คว่าแก้ตามคำแนะนำไหม
-                    recs = db.get_recommendation_texts(prior["eval_id"])
-                    gate = improvement_gate(recs, prior["text_content"], text)
-                    if gate.addressed_count == 0 and not lang_changed:
-                        eval_id = db.copy_evaluation(submission_id, prior["eval_id"])
-                        source, gate_note = "reused", gate.note or "no flagged issues addressed → reuse prior score"
-                    else:
-                        eval_id = _full_eval()
-                        gate_note = (f"addressed {gate.addressed_count} recommendation(s) → re-evaluated"
-                                     if not lang_changed else "output language changed → re-evaluated")
-            else:
-                eval_id = _full_eval()  # first version
-        except Exception:
-            db.set_submission_status(submission_id, "Failed")
-            raise
-
-        # F30 — extract project content (fire-safe: ล้มเหลวไม่กระทบผลประเมิน)
-        try:
-            _extract_and_store_content(thread_id, submission_id, chash, text)
-        except Exception:  # noqa: BLE001
-            logging.exception("project content extraction failed (non-fatal)")
-
-        result = db.get_evaluation(eval_id)
+        # ต้องเรียก LLM (gate/eval) -> ส่งเข้า queue รันเบื้องหลัง -> คืน processing ให้ frontend poll
+        msg.set(json.dumps({"submission_id": submission_id, "lang": lang}))
         return _json({
-            "thread_id": thread_id, "ticket_no": ticket_no, "version_no": version_no,
-            "submission_id": submission_id, "score_source": source, "gate_note": gate_note, "lang": lang,
-            "filename": b.get("filename", "proposal"), "file_url": _sas_url(b.get("blob_url", "")),
-            **result,
-            "history": db.get_thread_scores(thread_id),
-            "comments": db.get_comments(thread_id),
+            "status": "processing", "thread_id": thread_id, "ticket_no": ticket_no,
+            "version_no": version_no, "submission_id": submission_id, "lang": lang,
         })
     except Exception as err:  # noqa: BLE001
         logging.exception("evaluate failed")
+        return _json({"error": str(err)}, 500)
+
+
+def _safe_extract(thread_id: str, submission_id: str, chash: str, text: str) -> None:
+    """F30 extract project content แบบ fire-safe (ล้มเหลวไม่กระทบผลประเมิน)."""
+    try:
+        _extract_and_store_content(thread_id, submission_id, chash, text)
+    except Exception:  # noqa: BLE001
+        logging.exception("project content extraction failed (non-fatal)")
+
+
+@app.queue_trigger(arg_name="msg", queue_name="eval-jobs", connection="AzureWebJobsStorage")
+def evaluate_worker(msg: func.QueueMessage) -> None:
+    """Async worker — รัน gate/eval (LLM) เบื้องหลัง ไม่ชน HTTP timeout. เขียน status Evaluated/Failed."""
+    data = json.loads(msg.get_body().decode("utf-8"))
+    submission_id = data["submission_id"]
+    lang = data.get("lang", "en")
+    try:
+        sub = db.get_submission(submission_id)
+        if not sub:
+            logging.error("evaluate_worker: submission %s not found", submission_id)
+            return
+        text = sub["text_content"]
+        thread_id = sub["thread_id"]
+        chash = content_hash(text)
+        prior = db.latest_evaluated_submission(thread_id)  # submission ปัจจุบันยังไม่ evaluated
+
+        # F25 gate — เนื้อหาเปลี่ยน + ภาษาเดิม + ไม่ได้แก้ตามคำแนะนำ -> reuse คะแนนเดิม
+        if prior and prior["content_hash"] != chash and prior["lang"] == lang:
+            recs = db.get_recommendation_texts(prior["eval_id"])
+            gate = improvement_gate(recs, prior["text_content"], text)
+            if gate.addressed_count == 0:
+                db.copy_evaluation(submission_id, prior["eval_id"])
+                _safe_extract(thread_id, submission_id, chash, text)
+                return
+
+        # full evaluation (first version / เนื้อหาหรือภาษาเปลี่ยน)
+        # R6 — ถ้าเป็น version แก้ไข: ส่งผลประเมินเวอร์ชันก่อน (คะแนน+gaps+คำแนะนำ) เป็น context เพื่อ align
+        context = None
+        if prior:
+            try:
+                pe = db.get_evaluation(prior["eval_id"])
+                context = {
+                    "prior_version": {
+                        "version_no": prior["version_no"],
+                        "overall_score": pe.get("overall_score"),
+                        "verdict": pe.get("verdict"),
+                        "gaps": pe.get("gaps", []),
+                        "prior_recommendations": [r["rec_text"] for r in pe.get("recommendations", [])],
+                    },
+                    "instruction": (
+                        "นี่คือฉบับแก้ไขของ proposal เดิม — ประเมินให้สอดคล้องกับผลเวอร์ชันก่อน: "
+                        "จุดที่เคยแนะนำแล้วถูกแก้ คะแนนส่วนนั้นควรดีขึ้น; ส่วนที่ยังเหมือนเดิมคะแนนไม่ควรเปลี่ยนมาก"
+                    ),
+                }
+            except Exception:  # noqa: BLE001
+                context = None
+        llm_out = evaluate_proposal(text, context=context, lang=lang)
+        overall = scoring.compute_overall_score(llm_out.score_details)
+        db.save_evaluation(submission_id, overall, scoring.map_verdict(overall),
+                           llm_out, llm_out.model_dump_json(), llm.current_model(), "evaluated")
+        _safe_extract(thread_id, submission_id, chash, text)
+    except Exception:  # noqa: BLE001
+        logging.exception("evaluate_worker failed for %s", submission_id)
+        db.set_submission_status(submission_id, "Failed")
+
+
+@app.route(route="submissions/{sid}/status", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
+def submission_status(req: func.HttpRequest) -> func.HttpResponse:
+    """Poll สถานะ async eval — Evaluating|Evaluated|Failed. frontend ดึง result (getThread) เมื่อ Evaluated."""
+    try:
+        sub = db.get_submission(req.route_params.get("sid"))
+        if not sub:
+            return _json({"error": "not found"}, 404)
+        return _json({"status": sub["status"], "thread_id": sub["thread_id"]})
+    except Exception as err:  # noqa: BLE001
+        logging.exception("submission status failed")
         return _json({"error": str(err)}, 500)
 
 
@@ -243,11 +305,14 @@ def comments(req: func.HttpRequest) -> func.HttpResponse:
 
 @app.route(route="proposals", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
 def proposals(req: func.HttpRequest) -> func.HttpResponse:
-    """F18/F19 — รายการ proposal. user เห็นเฉพาะของตัวเอง, manager+ เห็นทั้งหมด (F44)."""
+    """F18/F19 — รายการ proposal. permission view_all -> เห็นทั้งหมด, ไม่งั้นเฉพาะที่ตัวเอง submit.
+    scope=mine -> บังคับเห็นเฉพาะของตัวเอง (ใช้กับ dropdown เลือกโปรเจคตอน upload version ใหม่)."""
     try:
         me = auth.current_user(req)
-        # ไม่มีสิทธิ์เข้า Library (manager+ เดิม) -> เห็นเฉพาะ thread ตัวเอง
-        owner = None if auth.has_page(me["role"], "library") else me["user_id"]
+        if req.params.get("scope") == "mine":
+            owner = me["user_id"]
+        else:
+            owner = None if auth.has_page(me["role"], "view_all") else me["user_id"]
         return _json(db.list_proposals(owner_id=owner))
     except Exception as err:  # noqa: BLE001
         logging.exception("proposals list failed")
@@ -566,6 +631,7 @@ def _settings_view(u: dict) -> dict:
         "default_lang": s.get("default_lang", "th"),
         "default_currency": s.get("default_currency", "THB"),
         "llm_provider": s.get("llm_provider", "azure"),
+        "active_model": llm.current_model(),  # ชื่อ model ปัจจุบัน (ทุก role เห็น — ไม่ sensitive)
     }
     if auth.require(u, "settings"):
         info = llm.local_info()

@@ -55,6 +55,16 @@ def local_info() -> dict:
     return {"ready": ready, "model": model}
 
 
+def current_model() -> str:
+    """ชื่อ model ที่จะใช้จริงตาม provider ปัจจุบัน (สำหรับบันทึกลง eval + แสดงใน UI)."""
+    from . import db  # lazy
+
+    s = db.get_settings()
+    if (s.get("llm_provider") or "azure").strip().lower() == "local":
+        return (s.get("local_llm_model") or os.environ.get("LOCAL_LLM_MODEL", "")).strip() or "local"
+    return os.environ.get("AZURE_OPENAI_DEPLOYMENT", "azure")
+
+
 def get_provider() -> str:
     """provider ปัจจุบัน ('azure'|'local'). อ่านล้มเหลว -> azure (ปลอดภัย, ของเดิม)."""
     from . import db  # lazy: กัน import chain ดึง pyodbc ตอน offline eval
